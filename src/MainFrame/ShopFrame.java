@@ -115,7 +115,10 @@ public class ShopFrame {
         AddBtn.setActionCommand("Add is pressed!");
         AddBtn.addActionListener(new AddBtnListener());
 
-        SearchField.addActionListener(new SearchFieldListener());
+        DeleteBtn.setActionCommand("Delete is pressed");
+        DeleteBtn.addActionListener(new DeleteBtnListener());
+
+        SearchBtn.addActionListener(new SearchBtnListener());
 
         // Show frame
         ShopApp.setVisible(true);
@@ -134,6 +137,33 @@ public class ShopFrame {
     }
 
     /**
+     * @param TName table name
+     * @throws AppException.EmptyTable if table is empty, throws exception
+     */
+    private void CheckTable(DefaultTableModel TName) throws AppException.EmptyTable{
+        if(model.getRowCount() == 0){
+            throw new AppException.EmptyTable();
+        }
+    }
+
+    /**
+     * <p>Listener of delete button</p>
+     * <p>Delete row in table, if it doesn't empty</p>
+     */
+    private class DeleteBtnListener implements ActionListener{
+        @Override
+        public void actionPerformed(ActionEvent e){
+            System.out.println(e.getActionCommand());
+            try{
+                CheckTable(model);
+                model.removeRow(WorkerData.getSelectedRow());
+            }catch (AppException.EmptyTable ex){
+                JOptionPane.showMessageDialog(ShopApp, ex.getMessage());
+            }
+        }
+    }
+
+    /**
      * <p>Listener of Add button</p>
      * <p>Add new row on table</p>
      */
@@ -141,18 +171,32 @@ public class ShopFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println(e.getActionCommand());
-            model.addRow(new String [] {"Test Worker", "Test Position"});
+            model.addRow(new String [] {"Test Worker" + model.getRowCount(), "Test Position"});
         }
     }
 
     /**
-     * <p>Listener of search text area</p>
-     * <p>Show message when enter is pressed</p>
+     * @param TFName text field name
+     * @throws AppException.EmptyTextField if table is empty, throws exception
      */
-    private class SearchFieldListener implements ActionListener{
+    private void CheckTextField(JTextField TFName) throws AppException.EmptyTextField
+    {
+        String SField = TFName.getText();
+        if(SField.length() == 0) throw new AppException.EmptyTextField();
+    }
+
+    /**
+     * <p>Listener of search button</p>
+     */
+    private class SearchBtnListener implements ActionListener{
         @Override
         public void actionPerformed(ActionEvent e) {
-            JOptionPane.showMessageDialog(null, "User search: " + SearchField.getText());
+            try{
+                CheckTextField(SearchField);
+                // Search some info
+            }catch (AppException.EmptyTextField ex){
+                JOptionPane.showMessageDialog(ShopApp, ex.getMessage());
+            }
         }
     }
 
