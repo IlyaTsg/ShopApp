@@ -4,6 +4,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.*;
 
 /**
  * Application with a graphical user interface
@@ -16,7 +17,6 @@ public class ShopFrame {
 
     // App buttons
     private JButton AddBtn;
-    private JButton EditBtn;
     private JButton SaveBtn;
     private JButton DeleteBtn;
     private JButton WorkersInfoBtn;
@@ -32,11 +32,15 @@ public class ShopFrame {
 
     // Table elements
     private DefaultTableModel model;
-    private JTable WorkerData;
-    private JScrollPane WorkersTable;
+    private JTable Data;
+    private JScrollPane Table;
 
     // Panel for low elements
     private JPanel LowPanel;
+
+
+    // Mode of app work(workers table: 1, products table: 2)
+    private int Mode;
 
     /**
      * Build and show frame
@@ -52,9 +56,6 @@ public class ShopFrame {
         AddBtn = new JButton(new ImageIcon("./img/Add.png"));
         AddBtn.setToolTipText("Add");
         AddBtn.setPreferredSize(new Dimension(32, 32));
-        EditBtn = new JButton(new ImageIcon("./img/Edit.png"));
-        EditBtn.setToolTipText("Change");
-        EditBtn.setPreferredSize(new Dimension(32, 32));
         SaveBtn = new JButton(new ImageIcon("./img/Save.png"));
         SaveBtn.setToolTipText("Save");
         SaveBtn.setPreferredSize(new Dimension(32, 32));
@@ -74,7 +75,6 @@ public class ShopFrame {
         // Add buttons on TopToolBar
         TopToolBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         TopToolBar.add(AddBtn);
-        TopToolBar.add(EditBtn);
         TopToolBar.add(SaveBtn);
         TopToolBar.add(DeleteBtn);
 
@@ -91,15 +91,20 @@ public class ShopFrame {
 
         ShopApp.add(LowPanel, BorderLayout.SOUTH);
 
-        // Add table
-        String [] columns = {"Name", "Position"};
-        String [][] data = {{"Ivanov Ivan", "Cashier"},
-                            {"Ivanova Maria", "Cleaner"}};
-        model = new DefaultTableModel(data, columns);
-        WorkerData = new JTable(model);
-        WorkersTable = new JScrollPane(WorkerData);
+        // By default load products table
+        Mode = 2;
 
-        ShopApp.add(WorkersTable, BorderLayout.CENTER);
+        // Initialize products table
+        String [] columns = {"Product", "Vendor code", "Number"};
+        String [][] data = {{"Melon", "01", "45"}};
+        model = new DefaultTableModel(data, columns);
+        Data = new JTable(model);
+        Table = new JScrollPane(Data);
+
+        LoadProductsTable();
+
+        // Add Table on frame
+        ShopApp.add(Table, BorderLayout.CENTER);
 
         // Add search
         SearchField = new JTextField();
@@ -109,30 +114,134 @@ public class ShopFrame {
         LowPanel.add(SearchBtn);
 
         // Add listeners
-        EditBtn.setActionCommand("Edit is pressed");
-        EditBtn.addActionListener(new EditBtnListener());
-
         AddBtn.setActionCommand("Add is pressed!");
         AddBtn.addActionListener(new AddBtnListener());
 
         DeleteBtn.setActionCommand("Delete is pressed");
         DeleteBtn.addActionListener(new DeleteBtnListener());
 
+        SaveBtn.setActionCommand("Save is pressed!");
+        SaveBtn.addActionListener(new SaveBtnListener());
+
         SearchBtn.addActionListener(new SearchBtnListener());
+
+        WorkersInfoBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Mode = 1;
+                LoadWorkersTable();
+            }
+        });
+
+        ProductsInfoBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Mode = 2;
+                LoadProductsTable();
+            }
+        });
 
         // Show frame
         ShopApp.setVisible(true);
     }
 
     /**
-     * <p>Listener of edit button</p>
-     * <p>Show dialog window</p>
+     * Save table in file
+     * @param FileName path to file
      */
-    private static class EditBtnListener implements ActionListener{
+    private void SaveTable(String FileName)
+    {
+        try{
+            BufferedWriter writer = new BufferedWriter(new FileWriter(FileName));
+            for(int i = 0; i < model.getRowCount(); i++){
+                for(int j = 0; j < model.getColumnCount(); j++){
+                    writer.write((String)model.getValueAt(i, j));
+                    writer.write("\n");
+                }
+            }
+            writer.close();
+        }
+        catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Listener for save button
+     */
+    private class SaveBtnListener implements ActionListener{
         @Override
         public void actionPerformed(ActionEvent e) {
             System.out.println(e.getActionCommand());
-            JOptionPane.showMessageDialog(null, e.getActionCommand());
+            switch (Mode) {
+                case (1) -> SaveTable("databases/workers.txt");
+                case (2) -> SaveTable("databases/products.txt");
+            }
+        }
+    }
+
+    /**
+     * Load workers table on screen
+     */
+    private void LoadWorkersTable()
+    {
+        String FileName = "databases/workers.txt";
+        try{
+            BufferedReader reader = new BufferedReader(new FileReader(FileName));
+
+            // Initialize workers table
+            String [] columns = {"Name", "Position"};
+            String [][] data = {{"Worker name", "Position"}};
+            model = new DefaultTableModel(data, columns);
+            Data = new JTable(model);
+            Table.setViewportView(Data);
+
+            model.removeRow(0); // Очистка таблицы
+
+            String worker = reader.readLine();
+            do{
+                String position = reader.readLine();
+                model.addRow(new String[] {worker, position});
+                worker = reader.readLine();
+            }while(worker != null);
+
+            reader.close();
+        }
+        catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    /**
+     * Load products table on screen
+     */
+    private void LoadProductsTable()
+    {
+        String FileName = "databases/products.txt";
+        try{
+            BufferedReader reader = new BufferedReader(new FileReader(FileName));
+
+            // Initialize products table
+            String [] columns = {"Product", "Vendor code", "Number"};
+            String [][] data = {{"Melon", "01", "45"}};
+            model = new DefaultTableModel(data, columns);
+            Data = new JTable(model);
+            Table.setViewportView(Data);
+
+            model.removeRow(0); // Очистка таблицы
+
+            String product = reader.readLine();
+            do{
+                String venCode = reader.readLine();
+                String number = reader.readLine();
+                model.addRow(new String[] {product, venCode, number});
+                product = reader.readLine();
+            }while(product != null);
+
+            reader.close();
+        }
+        catch (IOException ex) {
+            ex.printStackTrace();
         }
     }
 
@@ -156,9 +265,11 @@ public class ShopFrame {
             System.out.println(e.getActionCommand());
             try{
                 CheckTable(model);
-                model.removeRow(WorkerData.getSelectedRow());
+                model.removeRow(Data.getSelectedRow());
             }catch (AppException.EmptyTable ex){
                 JOptionPane.showMessageDialog(ShopApp, ex.getMessage());
+            }catch (ArrayIndexOutOfBoundsException ex1){
+                JOptionPane.showMessageDialog(ShopApp, "No line selected!");
             }
         }
     }
