@@ -2,6 +2,8 @@ package MainFrame;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
@@ -101,7 +103,7 @@ public class ShopFrame {
         Data = new JTable(model);
         Table = new JScrollPane(Data);
 
-        LoadProductsTable();
+        LoadProductsTable(Mode);
 
         // Add Table on frame
         ShopApp.add(Table, BorderLayout.CENTER);
@@ -114,13 +116,10 @@ public class ShopFrame {
         LowPanel.add(SearchBtn);
 
         // Add listeners
-        AddBtn.setActionCommand("Add is pressed!");
         AddBtn.addActionListener(new AddBtnListener());
 
-        DeleteBtn.setActionCommand("Delete is pressed");
         DeleteBtn.addActionListener(new DeleteBtnListener());
 
-        SaveBtn.setActionCommand("Save is pressed!");
         SaveBtn.addActionListener(new SaveBtnListener());
 
         SearchBtn.addActionListener(new SearchBtnListener());
@@ -128,16 +127,18 @@ public class ShopFrame {
         WorkersInfoBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                int OldMode = Mode;
                 Mode = 1;
-                LoadWorkersTable();
+                LoadWorkersTable(OldMode);
             }
         });
 
         ProductsInfoBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                int OldMode = Mode;
                 Mode = 2;
-                LoadProductsTable();
+                LoadProductsTable(OldMode);
             }
         });
 
@@ -172,7 +173,6 @@ public class ShopFrame {
     private class SaveBtnListener implements ActionListener{
         @Override
         public void actionPerformed(ActionEvent e) {
-            System.out.println(e.getActionCommand());
             switch (Mode) {
                 case (1) -> SaveTable("databases/workers.txt");
                 case (2) -> SaveTable("databases/products.txt");
@@ -183,20 +183,26 @@ public class ShopFrame {
     /**
      * Load workers table on screen
      */
-    private void LoadWorkersTable()
+    private void LoadWorkersTable(int OldMode)
     {
         String FileName = "databases/workers.txt";
         try{
             BufferedReader reader = new BufferedReader(new FileReader(FileName));
 
-            // Initialize workers table
-            String [] columns = {"Name", "Position"};
-            String [][] data = {{"Worker name", "Position"}};
-            model = new DefaultTableModel(data, columns);
-            Data = new JTable(model);
-            Table.setViewportView(Data);
+            if(OldMode != Mode) {
+                // Initialize workers table
+                String[] columns = {"Name", "Position"};
+                String[][] data = {{"Worker name", "Position"}};
+                model = new DefaultTableModel(data, columns);
+                Data = new JTable(model);
+                Table.setViewportView(Data);
+            }
 
-            model.removeRow(0); // Очистка таблицы
+            // Clear Table
+            int RowCount = model.getRowCount();
+            for(int i = 0; i < RowCount; i++){
+                model.removeRow(0);
+            }
 
             String worker = reader.readLine();
             do{
@@ -215,20 +221,26 @@ public class ShopFrame {
     /**
      * Load products table on screen
      */
-    private void LoadProductsTable()
+    private void LoadProductsTable(int OldMode)
     {
         String FileName = "databases/products.txt";
-        try{
+        try {
             BufferedReader reader = new BufferedReader(new FileReader(FileName));
 
-            // Initialize products table
-            String [] columns = {"Product", "Vendor code", "Number"};
-            String [][] data = {{"Melon", "01", "45"}};
-            model = new DefaultTableModel(data, columns);
-            Data = new JTable(model);
-            Table.setViewportView(Data);
+            if (Mode != OldMode){
+                // Initialize products table
+                String[] columns = {"Product", "Vendor code", "Number"};
+                String[][] data = {{"Melon", "01", "45"}};
+                model = new DefaultTableModel(data, columns);
+                Data = new JTable(model);
+                Table.setViewportView(Data);
+            }
 
-            model.removeRow(0); // Очистка таблицы
+            // Clear Table
+            int RowCount = model.getRowCount();
+            for(int i = 0; i < RowCount; i++){
+                model.removeRow(0);
+            }
 
             String product = reader.readLine();
             do{
@@ -262,7 +274,6 @@ public class ShopFrame {
     private class DeleteBtnListener implements ActionListener{
         @Override
         public void actionPerformed(ActionEvent e){
-            System.out.println(e.getActionCommand());
             try{
                 CheckTable(model);
                 model.removeRow(Data.getSelectedRow());
@@ -281,8 +292,10 @@ public class ShopFrame {
     private class AddBtnListener implements ActionListener{
         @Override
         public void actionPerformed(ActionEvent e) {
-            System.out.println(e.getActionCommand());
-            model.addRow(new String [] {"Test Worker" + model.getRowCount(), "Test Position"});
+            switch (Mode) {
+                case (1) -> model.addRow(new String [] {"Test Worker", "Test Position"});
+                case (2) -> model.addRow(new String [] {"Test Product", "Test Code", "Test Number"});
+            }
         }
     }
 
