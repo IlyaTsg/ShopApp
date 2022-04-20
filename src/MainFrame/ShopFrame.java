@@ -37,9 +37,16 @@ public class ShopFrame {
     private JTable Data;
     private JScrollPane Table;
 
+    // Buffers for loaded tables
+    private DefaultTableModel WorkerTBuf;
+    private DefaultTableModel ProductTBuf;
+
     // Panel for low elements
     private JPanel LowPanel;
 
+    // Flags for tables
+    private boolean WorkerTAlreadyLoad;
+    private boolean ProductsTAlreadyLoad;
 
     // Mode of app work(workers table: 1, products table: 2)
     private int Mode;
@@ -93,19 +100,16 @@ public class ShopFrame {
 
         ShopApp.add(LowPanel, BorderLayout.SOUTH);
 
-        // By default load products table
-        Mode = 2;
+        // Default mode
+        Mode = -1;
 
-        // Initialize products table
-        String [] columns = {"Product", "Vendor code", "Number"};
-        String [][] data = {{"Melon", "01", "45"}};
-        model = new DefaultTableModel(data, columns);
-        Data = new JTable(model);
-        Table = new JScrollPane(Data);
+        // Initialize and Add Table on frame
+        Table = new JScrollPane();
 
-        LoadProductsTable(Mode);
+        WorkerTAlreadyLoad = false;
+        ProductsTAlreadyLoad = false;
 
-        // Add Table on frame
+        LoadProductsTable();
         ShopApp.add(Table, BorderLayout.CENTER);
 
         // Add search
@@ -127,18 +131,14 @@ public class ShopFrame {
         WorkersInfoBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                int OldMode = Mode;
-                Mode = 1;
-                LoadWorkersTable(OldMode);
+                LoadWorkersTable();
             }
         });
 
         ProductsInfoBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                int OldMode = Mode;
-                Mode = 2;
-                LoadProductsTable(OldMode);
+                LoadProductsTable();
             }
         });
 
@@ -183,35 +183,38 @@ public class ShopFrame {
     /**
      * Load workers table on screen
      */
-    private void LoadWorkersTable(int OldMode)
+    private void LoadWorkersTable()
     {
         String FileName = "databases/workers.txt";
         try{
-            BufferedReader reader = new BufferedReader(new FileReader(FileName));
+            if(!WorkerTAlreadyLoad) {
+                BufferedReader reader = new BufferedReader(new FileReader(FileName));
 
-            if(OldMode != Mode) {
                 // Initialize workers table
                 String[] columns = {"Name", "Position"};
                 String[][] data = {{"Worker name", "Position"}};
                 model = new DefaultTableModel(data, columns);
+
+                model.removeRow(0);
+
+                String worker = reader.readLine();
+                do {
+                    String position = reader.readLine();
+                    model.addRow(new String[]{worker, position});
+                    worker = reader.readLine();
+                } while (worker != null);
+
+                reader.close();
+                WorkerTBuf = model; // Save model in buffer
+                WorkerTAlreadyLoad = true;
+            }
+
+            if(Mode != 1){ // If we need show table
+                model = WorkerTBuf;
                 Data = new JTable(model);
                 Table.setViewportView(Data);
+                Mode = 1;
             }
-
-            // Clear Table
-            int RowCount = model.getRowCount();
-            for(int i = 0; i < RowCount; i++){
-                model.removeRow(0);
-            }
-
-            String worker = reader.readLine();
-            do{
-                String position = reader.readLine();
-                model.addRow(new String[] {worker, position});
-                worker = reader.readLine();
-            }while(worker != null);
-
-            reader.close();
         }
         catch (IOException ex) {
             ex.printStackTrace();
@@ -221,36 +224,39 @@ public class ShopFrame {
     /**
      * Load products table on screen
      */
-    private void LoadProductsTable(int OldMode)
+    private void LoadProductsTable()
     {
         String FileName = "databases/products.txt";
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(FileName));
+            if(!ProductsTAlreadyLoad) {
+                BufferedReader reader = new BufferedReader(new FileReader(FileName));
 
-            if (Mode != OldMode){
                 // Initialize products table
                 String[] columns = {"Product", "Vendor code", "Number"};
                 String[][] data = {{"Melon", "01", "45"}};
                 model = new DefaultTableModel(data, columns);
+
+                model.removeRow(0);
+
+                String product = reader.readLine();
+                do {
+                    String venCode = reader.readLine();
+                    String number = reader.readLine();
+                    model.addRow(new String[]{product, venCode, number});
+                    product = reader.readLine();
+                } while (product != null);
+
+                reader.close();
+                ProductTBuf = model; // Save model in buffer
+                ProductsTAlreadyLoad = true;
+            }
+
+            if (Mode != 2){ // If we need show table
+                model = ProductTBuf;
                 Data = new JTable(model);
                 Table.setViewportView(Data);
+                Mode = 2;
             }
-
-            // Clear Table
-            int RowCount = model.getRowCount();
-            for(int i = 0; i < RowCount; i++){
-                model.removeRow(0);
-            }
-
-            String product = reader.readLine();
-            do{
-                String venCode = reader.readLine();
-                String number = reader.readLine();
-                model.addRow(new String[] {product, venCode, number});
-                product = reader.readLine();
-            }while(product != null);
-
-            reader.close();
         }
         catch (IOException ex) {
             ex.printStackTrace();
