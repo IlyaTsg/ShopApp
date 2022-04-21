@@ -1,12 +1,28 @@
 package MainFrame;
 
+import org.w3c.dom.*;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.util.Stack;
 
 /**
  * Application with a graphical user interface
@@ -147,24 +163,47 @@ public class ShopFrame {
     }
 
     /**
-     * Save table in file
-     * @param FileName path to file
+     * Save table in XML file
      */
-    private void SaveTable(String FileName)
+    private void SaveTable()
     {
+        String WorkersFileName = "databases/workers.xml";
+        String ProductsFileName = "databases/products.xml";
+        String FileName = "DefaultFileName";
         try{
-            BufferedWriter writer = new BufferedWriter(new FileWriter(FileName));
-            for(int i = 0; i < model.getRowCount(); i++){
-                for(int j = 0; j < model.getColumnCount(); j++){
-                    writer.write((String)model.getValueAt(i, j));
-                    writer.write("\n");
+            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            Document doc = builder.newDocument();
+
+            switch (Mode) {
+                case 1 -> {
+                    Node WorkersList = doc.createElement("WorkersList");
+                    doc.appendChild(WorkersList);
+                    for (int i = 0; i < model.getRowCount(); i++) {
+                        Element Worker = doc.createElement("worker");
+                        WorkersList.appendChild(Worker);
+                        Worker.setAttribute("name", (String) model.getValueAt(i, 0));
+                        Worker.setAttribute("position", (String) model.getValueAt(i, 1));
+                    }
+                    FileName = WorkersFileName;
+                }
+                case 2 -> {
+                    Node ProductsList = doc.createElement("ProductsList");
+                    doc.appendChild(ProductsList);
+                    for (int i = 0; i < model.getRowCount(); i++) {
+                        Element Product = doc.createElement("product");
+                        ProductsList.appendChild(Product);
+                        Product.setAttribute("name", (String) model.getValueAt(i, 0));
+                        Product.setAttribute("venCode", (String) model.getValueAt(i, 1));
+                        Product.setAttribute("number", (String) model.getValueAt(i, 2));
+                    }
+                    FileName = ProductsFileName;
                 }
             }
-            writer.close();
-        }
-        catch(IOException e){
-            e.printStackTrace();
-        }
+
+            Transformer trans = TransformerFactory.newInstance().newTransformer();
+            java.io.FileWriter writer = new FileWriter(FileName);
+            trans.transform(new DOMSource(doc), new StreamResult(writer));
+        }catch (ParserConfigurationException | TransformerException | IOException e) { e.printStackTrace(); }
     }
 
     /**
@@ -173,23 +212,18 @@ public class ShopFrame {
     private class SaveBtnListener implements ActionListener{
         @Override
         public void actionPerformed(ActionEvent e) {
-            switch (Mode) {
-                case (1) -> SaveTable("databases/workers.txt");
-                case (2) -> SaveTable("databases/products.txt");
-            }
+            SaveTable();
         }
     }
 
     /**
-     * Load workers table on screen
+     * Load workers table from XML file
      */
     private void LoadWorkersTable()
     {
-        String FileName = "databases/workers.txt";
-        try{
-            if(!WorkerTAlreadyLoad) {
-                BufferedReader reader = new BufferedReader(new FileReader(FileName));
-
+        String FileName = "databases/workers.xml";
+        if(!WorkerTAlreadyLoad) {
+            try {
                 // Initialize workers table
                 String[] columns = {"Name", "Position"};
                 String[][] data = {{"Worker name", "Position"}};
@@ -197,40 +231,43 @@ public class ShopFrame {
 
                 model.removeRow(0);
 
-                String worker = reader.readLine();
-                do {
-                    String position = reader.readLine();
-                    model.addRow(new String[]{worker, position});
-                    worker = reader.readLine();
-                } while (worker != null);
+                // Add builder and new document
+                DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+                Document doc = builder.parse(FileName);
+                doc.getDocumentElement().normalize();
 
-                reader.close();
+                NodeList WorkersList = doc.getElementsByTagName("worker");
+                for (int i = 0; i < WorkersList.getLength(); i++) {
+                    Node worker = WorkersList.item(i);
+                    NamedNodeMap attrs = worker.getAttributes();
+                    String name = attrs.getNamedItem("name").getNodeValue();
+                    String position = attrs.getNamedItem("position").getNodeValue();
+                    model.addRow(new String[] {name, position});
+                }
+
                 WorkerTBuf = model; // Save model in buffer
                 WorkerTAlreadyLoad = true;
-            }
-
-            if(Mode != 1){ // If we need show table
-                model = WorkerTBuf;
-                Data = new JTable(model);
-                Table.setViewportView(Data);
-                Mode = 1;
+            } catch (ParserConfigurationException | SAXException | IOException e) {
+                e.printStackTrace();
             }
         }
-        catch (IOException ex) {
-            ex.printStackTrace();
+
+        if(Mode != 1){ // If we need show table
+            model = WorkerTBuf;
+            Data = new JTable(model);
+            Table.setViewportView(Data);
+            Mode = 1;
         }
     }
 
     /**
-     * Load products table on screen
+     * Load products table from XML file
      */
     private void LoadProductsTable()
     {
-        String FileName = "databases/products.txt";
-        try {
-            if(!ProductsTAlreadyLoad) {
-                BufferedReader reader = new BufferedReader(new FileReader(FileName));
-
+        String FileName = "databases/products.xml";
+        if(!ProductsTAlreadyLoad) {
+            try {
                 // Initialize products table
                 String[] columns = {"Product", "Vendor code", "Number"};
                 String[][] data = {{"Melon", "01", "45"}};
@@ -238,28 +275,33 @@ public class ShopFrame {
 
                 model.removeRow(0);
 
-                String product = reader.readLine();
-                do {
-                    String venCode = reader.readLine();
-                    String number = reader.readLine();
-                    model.addRow(new String[]{product, venCode, number});
-                    product = reader.readLine();
-                } while (product != null);
+                // Add builder and new document
+                DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+                Document doc = builder.parse(FileName);
+                doc.getDocumentElement().normalize();
 
-                reader.close();
+                NodeList ProductsList = doc.getElementsByTagName("product");
+                for (int i = 0; i < ProductsList.getLength(); i++) {
+                    Node product = ProductsList.item(i);
+                    NamedNodeMap attrs = product.getAttributes();
+                    String name = attrs.getNamedItem("name").getNodeValue();
+                    String venCode = attrs.getNamedItem("venCode").getNodeValue();
+                    String number = attrs.getNamedItem("number").getNodeValue();
+                    model.addRow(new String[] {name, venCode, number});
+                }
+
                 ProductTBuf = model; // Save model in buffer
                 ProductsTAlreadyLoad = true;
-            }
-
-            if (Mode != 2){ // If we need show table
-                model = ProductTBuf;
-                Data = new JTable(model);
-                Table.setViewportView(Data);
-                Mode = 2;
+            } catch (ParserConfigurationException | SAXException | IOException e) {
+                e.printStackTrace();
             }
         }
-        catch (IOException ex) {
-            ex.printStackTrace();
+
+        if(Mode != 2){ // If we need show table
+            model = ProductTBuf;
+            Data = new JTable(model);
+            Table.setViewportView(Data);
+            Mode = 2;
         }
     }
 
@@ -299,8 +341,8 @@ public class ShopFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             switch (Mode) {
-                case (1) -> model.addRow(new String [] {"Test Worker", "Test Position"});
-                case (2) -> model.addRow(new String [] {"Test Product", "Test Code", "Test Number"});
+                case (1) -> model.addRow(new String [] {"", ""});
+                case (2) -> model.addRow(new String [] {"", "", ""});
             }
         }
     }
