@@ -1,1 +1,1 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><WorkersList><worker name="John" position="Cashier"/><worker name="Frodo" position="Cleaner"/><worker name="Ilya123" position="Cleaner"/></WorkersList>
+<?xml version="1.0" encoding="UTF-8"?><WorkersList><worker name="John" position="Cashier"/><worker name="NeFrodo" position="Manager"/><worker name="Ilya123" position="Cleaner"/></WorkersList>

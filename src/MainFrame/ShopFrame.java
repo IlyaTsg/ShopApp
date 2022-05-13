@@ -1,20 +1,14 @@
 package MainFrame;
 
 import org.w3c.dom.*;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableColumn;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -22,7 +16,6 @@ import javax.xml.transform.stream.StreamResult;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
-import java.util.Stack;
 
 /**
  * Application with a graphical user interface
@@ -70,12 +63,13 @@ public class ShopFrame {
     /**
      * Build and show frame
      */
-    public void LaunchFrame()
-    {
+    public void LaunchFrame() throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         // Build frame
         ShopApp = new JFrame("ShopApp");
         ShopApp.setSize(560, 400);
         ShopApp.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
 
         // Add buttons
         AddBtn = new JButton(new ImageIcon("./img/Add.png"));
@@ -155,6 +149,13 @@ public class ShopFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 LoadProductsTable();
+            }
+        });
+
+        ShopInfoBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                //ReportGenerator.Generate("databases/workers.xml", "XPath", "Reports/Structure/WorkersReport.jrxml", "Reports/WorkersReport.pdf");
             }
         });
 
@@ -372,8 +373,7 @@ public class ShopFrame {
         }
     }
 
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         new ShopFrame().LaunchFrame();
     }
 }
