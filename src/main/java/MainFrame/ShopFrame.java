@@ -155,7 +155,14 @@ public class ShopFrame {
         ShopInfoBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                //ReportGenerator.Generate("databases/workers.xml", "XPath", "Reports/Structure/WorkersReport.jrxml", "Reports/WorkersReport.pdf");
+                try {
+                    ReportGenerator.GenerateWorkers("databases/workers.xml","Reports/WorkersReport.pdf", "Avtovo Street, 12");
+                    ReportGenerator.GenerateProducts("databases/products.xml","Reports/ProductsReport.pdf", "Avtovo Street, 12");
+                    JOptionPane.showMessageDialog(ShopApp, "Reports about products and workers are ready!");
+                } catch (FileNotFoundException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(ShopApp, "Report hasn't created! Please check your xml-file.");
+                }
             }
         });
 
