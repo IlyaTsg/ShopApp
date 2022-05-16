@@ -1,8 +1,1 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<ProductsList>
-    <product name="MelonFFF" number="45123" venCode="01213"/>
-    <product name="Onion" number="52" venCode="03"/>
-    <product name="test1" number="012" venCode="123"/>
-    <product name="Hello" number="12" venCode="12"/>
-    <product name="Testm" number="tsadv" venCode="test"/>
-</ProductsList>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><ProductsList><product name="Melon" number="45" venCode="01"/><product name="Onion" number="52" venCode="03"/><product name="sdf" number="sdf" venCode="df"/><product name="1" number="1" venCode="1"/></ProductsList>

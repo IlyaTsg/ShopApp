@@ -24,7 +24,7 @@ import java.io.*;
  */
 public class ShopFrame {
     // Main frame
-    private JFrame ShopApp;
+    static JFrame ShopApp;
 
     // App buttons
     private JButton AddBtn;
@@ -54,8 +54,15 @@ public class ShopFrame {
     private JPanel LowPanel;
 
     // Flags for tables
-    private boolean WorkerTAlreadyLoad;
-    private boolean ProductsTAlreadyLoad;
+    static boolean WorkerTAlreadyLoad = false;
+    static boolean ProductsTAlreadyLoad = false;
+
+    // Streams monitor
+    private Object sync;
+
+    // Flags for xml-files
+    static boolean WorkersXMLSaved = false;
+    static boolean ProductsXMLSaved = false;
 
     // Mode of app work(workers table: 1, products table: 2)
     private int Mode;
@@ -116,8 +123,7 @@ public class ShopFrame {
         // Initialize and Add Table on frame
         Table = new JScrollPane();
 
-        WorkerTAlreadyLoad = false;
-        ProductsTAlreadyLoad = false;
+        sync = new Object(); // Initialize monitor
 
         LoadProductsTable();
         ShopApp.add(Table, BorderLayout.CENTER);
@@ -155,14 +161,8 @@ public class ShopFrame {
         ShopInfoBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                try {
-                    ReportGenerator.GenerateWorkers("databases/workers.xml","Reports/WorkersReport.pdf", "Avtovo Street, 12");
-                    ReportGenerator.GenerateProducts("databases/products.xml","Reports/ProductsReport.pdf", "Avtovo Street, 12");
-                    JOptionPane.showMessageDialog(ShopApp, "Reports about products and workers are ready!");
-                } catch (FileNotFoundException ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(ShopApp, "Report hasn't created! Please check your xml-file.");
-                }
+                Thread GenerateStream = new Thread(new ReportGenerator(sync, WorkersXMLSaved, ProductsXMLSaved));
+                GenerateStream.start();
             }
         });
 
@@ -193,6 +193,7 @@ public class ShopFrame {
                         Worker.setAttribute("position", (String) model.getValueAt(i, 1));
                     }
                     FileName = WorkersFileName;
+                    WorkersXMLSaved = true;
                 }
                 case 2 -> {
                     Node ProductsList = doc.createElement("ProductsList");
@@ -205,6 +206,7 @@ public class ShopFrame {
                         Product.setAttribute("number", (String) model.getValueAt(i, 2));
                     }
                     FileName = ProductsFileName;
+                    ProductsXMLSaved = true;
                 }
             }
 
@@ -221,6 +223,11 @@ public class ShopFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             SaveTable();
+            synchronized (sync){
+                if(WorkersXMLSaved && ProductsXMLSaved) {
+                    sync.notify();
+                }
+            }
         }
     }
 
@@ -239,18 +246,22 @@ public class ShopFrame {
 
                 model.removeRow(0);
 
-                // Add builder and new document
-                DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-                Document doc = builder.parse(FileName);
-                doc.getDocumentElement().normalize();
+                try {
+                    // Add builder and new document
+                    DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+                    Document doc = builder.parse(FileName);
+                    doc.getDocumentElement().normalize();
 
-                NodeList WorkersList = doc.getElementsByTagName("worker");
-                for (int i = 0; i < WorkersList.getLength(); i++) {
-                    Node worker = WorkersList.item(i);
-                    NamedNodeMap attrs = worker.getAttributes();
-                    String name = attrs.getNamedItem("name").getNodeValue();
-                    String position = attrs.getNamedItem("position").getNodeValue();
-                    model.addRow(new String[] {name, position});
+                    NodeList WorkersList = doc.getElementsByTagName("worker");
+                    for (int i = 0; i < WorkersList.getLength(); i++) {
+                        Node worker = WorkersList.item(i);
+                        NamedNodeMap attrs = worker.getAttributes();
+                        String name = attrs.getNamedItem("name").getNodeValue();
+                        String position = attrs.getNamedItem("position").getNodeValue();
+                        model.addRow(new String[]{name, position});
+                    }
+                }catch (FileNotFoundException ex){
+                    ex.printStackTrace();
                 }
 
                 WorkerTBuf = model; // Save model in buffer
@@ -283,19 +294,23 @@ public class ShopFrame {
 
                 model.removeRow(0);
 
-                // Add builder and new document
-                DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-                Document doc = builder.parse(FileName);
-                doc.getDocumentElement().normalize();
+                try {
+                    // Add builder and new document
+                    DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+                    Document doc = builder.parse(FileName);
+                    doc.getDocumentElement().normalize();
 
-                NodeList ProductsList = doc.getElementsByTagName("product");
-                for (int i = 0; i < ProductsList.getLength(); i++) {
-                    Node product = ProductsList.item(i);
-                    NamedNodeMap attrs = product.getAttributes();
-                    String name = attrs.getNamedItem("name").getNodeValue();
-                    String venCode = attrs.getNamedItem("venCode").getNodeValue();
-                    String number = attrs.getNamedItem("number").getNodeValue();
-                    model.addRow(new String[] {name, venCode, number});
+                    NodeList ProductsList = doc.getElementsByTagName("product");
+                    for (int i = 0; i < ProductsList.getLength(); i++) {
+                        Node product = ProductsList.item(i);
+                        NamedNodeMap attrs = product.getAttributes();
+                        String name = attrs.getNamedItem("name").getNodeValue();
+                        String venCode = attrs.getNamedItem("venCode").getNodeValue();
+                        String number = attrs.getNamedItem("number").getNodeValue();
+                        model.addRow(new String[]{name, venCode, number});
+                    }
+                }catch (FileNotFoundException ex){
+                    ex.printStackTrace();
                 }
 
                 ProductTBuf = model; // Save model in buffer

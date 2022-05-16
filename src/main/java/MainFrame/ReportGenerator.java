@@ -11,6 +11,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import javax.swing.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -20,7 +21,44 @@ import java.io.IOException;
 /**
  * PDF Reports from XML-file Generator Class
  */
-public class ReportGenerator {
+public class ReportGenerator implements Runnable{
+    private Object sync;
+    private Boolean WorkersXMLSaved;
+    private boolean ProductsXMLSaved;
+
+    public ReportGenerator(Object sync, Boolean WorkersXMLSaved, Boolean ProductsXMLSaved){
+        this.sync = sync;
+        this.WorkersXMLSaved = WorkersXMLSaved;
+        this.ProductsXMLSaved = ProductsXMLSaved;
+    }
+
+    @Override
+    public void run() {
+        synchronized (sync) {
+            if (!(WorkersXMLSaved && ProductsXMLSaved)) {
+                try {
+                    JOptionPane.showMessageDialog(ShopFrame.ShopApp, "Please save tables.");
+                    sync.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            try {
+                GenerateWorkers("databases/workers.xml","Reports/WorkersReport.pdf", "Avtovo Street, 12");
+                GenerateProducts("databases/products.xml","Reports/ProductsReport.pdf", "Avtovo Street, 12");
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Generate PDF report about workers
+     * @param datasource - path to XML-file
+     * @param resultpath - path to PDF report
+     * @param ShopAddress - shop's address
+     * @throws FileNotFoundException
+     */
     public static void GenerateWorkers(String datasource, String resultpath, String ShopAddress) throws FileNotFoundException {
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(resultpath));
         pdfDoc.addNewPage();
@@ -65,6 +103,7 @@ public class ReportGenerator {
 
         doc.close();
     }
+
     public static void GenerateProducts(String datasource, String resultpath, String ShopAddress) throws FileNotFoundException {
         PdfDocument pdfDoc = new PdfDocument(new PdfWriter(resultpath));
         pdfDoc.addNewPage();
