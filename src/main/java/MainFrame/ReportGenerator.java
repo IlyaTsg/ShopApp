@@ -22,9 +22,9 @@ import java.io.IOException;
  * PDF Reports from XML-file Generator Class
  */
 public class ReportGenerator implements Runnable{
-    private Object sync;
-    private Boolean WorkersXMLSaved;
-    private boolean ProductsXMLSaved;
+    private final Object sync;
+    private final Boolean WorkersXMLSaved;
+    private final boolean ProductsXMLSaved;
 
     public ReportGenerator(Object sync, Boolean WorkersXMLSaved, Boolean ProductsXMLSaved){
         this.sync = sync;

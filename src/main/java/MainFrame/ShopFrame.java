@@ -36,7 +36,7 @@ public class ShopFrame {
     private JButton SearchBtn;
 
     // Field for search info
-    private JTextField SearchField;
+    protected JTextField SearchField;
 
     // Panels for buttons
     private JPanel TopToolBar;
@@ -70,13 +70,17 @@ public class ShopFrame {
     /**
      * Build and show frame
      */
-    public void LaunchFrame() throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public void LaunchFrame(){
         // Build frame
         ShopApp = new JFrame("ShopApp");
         ShopApp.setSize(560, 400);
         ShopApp.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+        try {
+            UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+        }catch(UnsupportedLookAndFeelException | ClassNotFoundException | InstantiationException | IllegalAccessException ex){
+            ex.printStackTrace();
+        }
 
         // Add buttons
         AddBtn = new JButton(new ImageIcon("./img/Add.png"));
@@ -173,7 +177,7 @@ public class ShopFrame {
     /**
      * Save table in XML file
      */
-    private void SaveTable()
+    protected void SaveTable()
     {
         String WorkersFileName = "databases/workers.xml";
         String ProductsFileName = "databases/products.xml";
@@ -332,8 +336,8 @@ public class ShopFrame {
      * @param TName table name
      * @throws AppException.EmptyTable if table is empty, throws exception
      */
-    private void CheckTable(DefaultTableModel TName) throws AppException.EmptyTable{
-        if(model.getRowCount() == 0){
+    protected void CheckTable(DefaultTableModel TName) throws AppException.EmptyTable{
+        if(TName.getRowCount() == 0){
             throw new AppException.EmptyTable();
         }
     }
@@ -374,7 +378,7 @@ public class ShopFrame {
      * @param TFName text field name
      * @throws AppException.EmptyTextField if table is empty, throws exception
      */
-    private void CheckTextField(JTextField TFName) throws AppException.EmptyTextField
+    protected void CheckTextField(JTextField TFName) throws AppException.EmptyTextField
     {
         String SField = TFName.getText();
         if(SField.length() == 0) throw new AppException.EmptyTextField();
@@ -395,7 +399,7 @@ public class ShopFrame {
         }
     }
 
-    public static void main(String[] args) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public static void main(String[] args){
         new ShopFrame().LaunchFrame();
     }
 }
